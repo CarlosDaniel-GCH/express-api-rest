@@ -1,26 +1,10 @@
+import { JobModel } from "../models/job"
+
 export class JobController {
     static async getAll(req, res){
         const { text, title, level, limit = DEFAULTS.LIMIT_PAGINATION, technology, offset = DEFAULTS.LIMIT_OFFSET } = req.query
 
-        let filteredJobs = jobs
-
-        if(text){
-            const searchTerm = text.toLowerCase()
-            filteredJobs = filteredJobs.filter(jobs => 
-                jobs.titulo.toLowerCase().includes(searchTerm) || jobs.descripcion.toLowerCase().includes(searchTerm)
-            )
-        }
-
-        if(technology){
-            filteredJobs = filteredJobs.filter(jobs => 
-                jobs.tecnologias.includes(technology)
-            )
-        }
-
-        const limitNumber = Number(limit)
-        const offsetNumber = Number(offset)
-
-        const paginatedJobs = filteredJobs.slice(offsetNumber, offsetNumber + limitNumber)
+        const paginatedJobs = await JobModel.getAll({ text, title, level, limit, technology, offset })
 
         return res.json({ data: paginatedJobs, total: filteredJobs.length, limit: limitNumber, offset: offsetNumber})
     }
@@ -28,7 +12,7 @@ export class JobController {
     static async getId(req, res){
         const { id } = req.params
 
-        const job = jobs.find(job => job.id === id)
+        const job = await JobModel.getById(id)
 
         if(!job){
             return res.status(404).json({ error: 'Job not found' })
@@ -40,15 +24,7 @@ export class JobController {
     static async create(req, res){
         const { titulo, empresa, ubicacion, data } = req.body
 
-        const newJob = {
-            id: crypto.randomUUID(),
-            titulo,
-            empresa,
-            ubicacion,
-            data,
-        }
-
-        jobs.push(newJob)
+        const newJob = await JobModel.create({ titulo, empresa, ubicacion, data })
 
         return res.status(201).json(newJob)
     }
